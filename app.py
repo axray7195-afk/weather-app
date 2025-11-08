@@ -86,7 +86,7 @@ st.markdown("""
 city = st.text_input("🏙️ Enter city name")
 
 if city:
-    api_key = "YOUR_API_KEY"  # Replace with your OpenWeatherMap API key
+    api_key = "3a9e0e4693504cbbb0585105250811"  # Replace with your OpenWeatherMap API key
     url = f"http://api.openweathermap.org/data/2.5/weather?q={city}&appid={api_key}&units=metric"
 
     response = requests.get(url)
