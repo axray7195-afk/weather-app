@@ -1,20 +1,20 @@
 import streamlit as st
 import requests
 
-# ---------- Page Setup ----------
+# ---------- Page setup ----------
 st.set_page_config(page_title="Aesthetic Weather App", page_icon="🌤️", layout="centered")
 
 # ---------- Custom CSS ----------
 st.markdown("""
     <style>
-        /* Background gradient */
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap');
+
         .stApp {
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            background: linear-gradient(135deg, #1E3C72 0%, #2A5298 100%);
             color: white;
             font-family: 'Poppins', sans-serif;
         }
 
-        /* Center content */
         .block-container {
             padding-top: 3rem;
             text-align: center;
@@ -27,34 +27,35 @@ st.markdown("""
         }
 
         p {
-            color: #e0e0e0;
+            color: #d0d0d0;
             font-size: 1rem;
         }
 
-        /* Input box */
+        /* Input field */
         input {
             background-color: rgba(255, 255, 255, 0.15) !important;
             color: white !important;
             border-radius: 10px !important;
+            border: none !important;
         }
 
-        /* Result card */
+        /* Weather Card */
         .weather-card {
             background: rgba(255, 255, 255, 0.1);
-            padding: 20px;
-            border-radius: 15px;
-            box-shadow: 0 0 25px rgba(255, 255, 255, 0.2);
+            padding: 25px;
+            border-radius: 20px;
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
             margin-top: 30px;
-            transition: 0.3s ease;
+            transition: all 0.3s ease;
         }
 
         .weather-card:hover {
             transform: scale(1.03);
-            box-shadow: 0 0 35px rgba(255, 255, 255, 0.3);
+            box-shadow: 0 0 40px rgba(255, 255, 255, 0.3);
         }
 
         .emoji {
-            font-size: 50px;
+            font-size: 60px;
             animation: float 2s ease-in-out infinite;
         }
 
@@ -76,55 +77,59 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# ---------- App Title ----------
+# ---------- Title ----------
 st.markdown("""
     <h1>🌤️ Aesthetic Weather App</h1>
-    <p>Get real-time weather updates with style ✨</p>
+    <p>Real-time weather updates with a beautiful touch ✨</p>
 """, unsafe_allow_html=True)
 
 # ---------- Input ----------
 city = st.text_input("🏙️ Enter city name")
 
 if city:
-    api_key = "3a9e0e4693504cbbb0585105250811"  # Replace with your OpenWeatherMap API key
-    url = f"http://api.openweathermap.org/data/2.5/weather?q={city}&appid={api_key}&units=metric"
-
-    response = requests.get(url)
-    if response.status_code == 200:
+    api_key = "3a9e0e4693504cbbb0585105250811"  # Replace with your actual API key
+    try:
+        url = f"http://api.openweathermap.org/data/2.5/weather?q={city}&appid={api_key}&units=metric"
+        response = requests.get(url, timeout=10)
         data = response.json()
-        temp = data["main"]["temp"]
-        humidity = data["main"]["humidity"]
-        pressure = data["main"]["pressure"]
-        wind_speed = data["wind"]["speed"]
-        condition = data["weather"][0]["main"]
-        description = data["weather"][0]["description"].capitalize()
 
-        # Emoji / Icon Mapping
-        weather_icons = {
-            "Clear": "☀️",
-            "Clouds": "☁️",
-            "Rain": "🌧️",
-            "Drizzle": "🌦️",
-            "Thunderstorm": "⛈️",
-            "Snow": "❄️",
-            "Mist": "🌫️",
-            "Haze": "🌁"
-        }
-        icon = weather_icons.get(condition, "🌎")
+        # Handle invalid location
+        if response.status_code != 200 or data.get("cod") != 200:
+            st.warning("⚠️ Location not found. Please try a valid city name.")
+        else:
+            temp = data["main"]["temp"]
+            humidity = data["main"]["humidity"]
+            pressure = data["main"]["pressure"]
+            wind_speed = data["wind"]["speed"]
+            condition = data["weather"][0]["main"]
+            description = data["weather"][0]["description"].capitalize()
 
-        # ---------- Display ----------
-        st.markdown(f"""
-            <div class="weather-card">
-                <div class="emoji">{icon}</div>
-                <h2>{city.title()}</h2>
-                <p style="font-size:1.1rem;">{description}</p>
-                <div class="main-temp">{temp}°C</div>
-                <p class="info">💧 Humidity: {humidity}% &nbsp; | &nbsp; 🌬️ Wind: {wind_speed} m/s</p>
-                <p class="info">📊 Pressure: {pressure} hPa</p>
-            </div>
-        """, unsafe_allow_html=True)
+            # Emoji Mapping
+            weather_icons = {
+                "Clear": "☀️",
+                "Clouds": "☁️",
+                "Rain": "🌧️",
+                "Drizzle": "🌦️",
+                "Thunderstorm": "⛈️",
+                "Snow": "❄️",
+                "Mist": "🌫️",
+                "Haze": "🌁"
+            }
+            icon = weather_icons.get(condition, "🌍")
 
-    else:
-        st.error("❌ City not found. Please try again.")
+            # Display Weather Info
+            st.markdown(f"""
+                <div class="weather-card">
+                    <div class="emoji">{icon}</div>
+                    <h2>{city.title()}</h2>
+                    <p style="font-size:1.1rem;">{description}</p>
+                    <div class="main-temp">{temp}°C</div>
+                    <p class="info">💧 Humidity: {humidity}% &nbsp; | &nbsp; 🌬️ Wind: {wind_speed} m/s</p>
+                    <p class="info">📊 Pressure: {pressure} hPa</p>
+                </div>
+            """, unsafe_allow_html=True)
+
+    except requests.exceptions.RequestException:
+        st.error("⚠️ Network error. Please check your connection and try again.")
 else:
     st.info("ℹ️ Please enter a city name to get weather details.")
