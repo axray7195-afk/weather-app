@@ -1,135 +1,106 @@
 import streamlit as st
 import requests
 
-# ---------- Page setup ----------
-st.set_page_config(page_title="Aesthetic Weather App", page_icon="🌤️", layout="centered")
+# App config
+st.set_page_config(page_title="Weather App", page_icon="🌦️", layout="centered")
 
-# ---------- Custom CSS ----------
-st.markdown("""
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap');
+# ---- CSS STYLING ----
+page_bg = """
+<style>
+[data-testid="stAppViewContainer"] {
+    background-image: url('https://images.unsplash.com/photo-1503264116251-35a269479413?auto=format&fit=crop&w=1280&q=80');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+[data-testid="stHeader"] {background: rgba(0,0,0,0);}
+[data-testid="stToolbar"] {right: 2rem;}
+h1, h2, h3, h4, h5, h6, p, span {
+    color: #ffffff !important;
+    text-align: center;
+}
+.css-1d391kg {background-color: rgba(0,0,0,0.5) !important; border-radius: 20px !important;}
+</style>
+"""
+st.markdown(page_bg, unsafe_allow_html=True)
 
-        .stApp {
-            background: linear-gradient(135deg, #1E3C72 0%, #2A5298 100%);
-            color: white;
-            font-family: 'Poppins', sans-serif;
-        }
+# ---- TITLE ----
+st.markdown("<h1 style='text-align:center;'>🌦️ Simple Weather App</h1>", unsafe_allow_html=True)
 
-        .block-container {
-            padding-top: 3rem;
-            text-align: center;
-        }
+# ---- Helper functions ----
+def get_lat_lon(city):
+    geo_url = f"https://geocoding-api.open-meteo.com/v1/search?name={city}"
+    geo_response = requests.get(geo_url)
+    if geo_response.status_code == 200:
+        geo_data = geo_response.json()
+        if "results" in geo_data and len(geo_data["results"]) > 0:
+            lat = geo_data["results"][0]["latitude"]
+            lon = geo_data["results"][0]["longitude"]
+            return lat, lon
+    return None, None
 
-        h1 {
-            color: #ffffff;
-            font-weight: 700;
-            font-size: 2.5rem;
-        }
 
-        p {
-            color: #d0d0d0;
-            font-size: 1rem;
-        }
+def get_weather(lat, lon):
+    url = f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&current_weather=true"
+    response = requests.get(url)
+    if response.status_code == 200:
+        return response.json()
+    return None
 
-        /* Input field */
-        input {
-            background-color: rgba(255, 255, 255, 0.15) !important;
-            color: white !important;
-            border-radius: 10px !important;
-            border: none !important;
-        }
 
-        /* Weather Card */
-        .weather-card {
-            background: rgba(255, 255, 255, 0.1);
-            padding: 25px;
-            border-radius: 20px;
-            box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
-            margin-top: 30px;
-            transition: all 0.3s ease;
-        }
+# ---- Weather icon mapping ----
+def get_weather_icon(code):
+    icons = {
+        0: "☀️ Clear sky",
+        1: "🌤️ Mainly clear",
+        2: "⛅ Partly cloudy",
+        3: "☁️ Overcast",
+        45: "🌫️ Fog",
+        48: "🌫️ Depositing rime fog",
+        51: "🌦️ Light drizzle",
+        53: "🌧️ Moderate drizzle",
+        55: "🌧️ Heavy drizzle",
+        61: "🌦️ Light rain",
+        63: "🌧️ Moderate rain",
+        65: "🌧️ Heavy rain",
+        71: "❄️ Snow fall",
+        73: "❄️ Moderate snow",
+        75: "❄️ Heavy snow",
+        95: "⛈️ Thunderstorm",
+        99: "🌩️ Thunderstorm with hail",
+    }
+    return icons.get(code, "🌈 Weather data")
 
-        .weather-card:hover {
-            transform: scale(1.03);
-            box-shadow: 0 0 40px rgba(255, 255, 255, 0.3);
-        }
+# ---- Input ----
+city = st.text_input("Enter city name", placeholder="e.g., Berlin, Mumbai, Paris")
 
-        .emoji {
-            font-size: 60px;
-            animation: float 2s ease-in-out infinite;
-        }
-
-        @keyframes float {
-            0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-10px); }
-        }
-
-        .main-temp {
-            color: #FFD700;
-            font-size: 3rem;
-            margin: 10px 0;
-        }
-
-        .info {
-            color: #B0C4DE;
-            font-size: 1.1rem;
-        }
-    </style>
-""", unsafe_allow_html=True)
-
-# ---------- Title ----------
-st.markdown("""
-    <h1>🌤️ Aesthetic Weather App</h1>
-    <p>Real-time weather updates with a beautiful touch ✨</p>
-""", unsafe_allow_html=True)
-
-# ---------- Input ----------
-city = st.text_input("🏙️ Enter city name")
-
-if city:
-    api_key = "3a9e0e4693504cbbb0585105250811"  # Replace with your actual API key
-    try:
-        url = f"http://api.openweathermap.org/data/2.5/weather?q={city}&appid={api_key}&units=metric"
-        response = requests.get(url, timeout=10)
-        data = response.json()
-
-        # Handle invalid location
-        if response.status_code != 200 or data.get("cod") != 200:
-            st.warning("⚠️ Location not found. Please try a valid city name.")
+# ---- Main logic ----
+if st.button("Get Weather"):
+    if city:
+        lat, lon = get_lat_lon(city)
+        if lat and lon:
+            data = get_weather(lat, lon)
+            if data and "current_weather" in data:
+                weather = data["current_weather"]
+                code = weather.get("weathercode", 0)
+                icon = get_weather_icon(code)
+                
+                st.markdown(
+                    f"""
+                    <div style="background-color:rgba(0,0,0,0.6);
+                                padding:20px; border-radius:20px; text-align:center;">
+                        <h2>{icon}</h2>
+                        <h3>🌆 {city.title()}</h3>
+                        <p>🌡️ Temperature: {weather['temperature']}°C</p>
+                        <p>🌬️ Wind Speed: {weather['windspeed']} km/h</p>
+                        <p>⏰ Time: {weather['time']}</p>
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
+            else:
+                st.error("❌ Could not fetch weather data.")
         else:
-            temp = data["main"]["temp"]
-            humidity = data["main"]["humidity"]
-            pressure = data["main"]["pressure"]
-            wind_speed = data["wind"]["speed"]
-            condition = data["weather"][0]["main"]
-            description = data["weather"][0]["description"].capitalize()
-
-            # Emoji Mapping
-            weather_icons = {
-                "Clear": "☀️",
-                "Clouds": "☁️",
-                "Rain": "🌧️",
-                "Drizzle": "🌦️",
-                "Thunderstorm": "⛈️",
-                "Snow": "❄️",
-                "Mist": "🌫️",
-                "Haze": "🌁"
-            }
-            icon = weather_icons.get(condition, "🌍")
-
-            # Display Weather Info
-            st.markdown(f"""
-                <div class="weather-card">
-                    <div class="emoji">{icon}</div>
-                    <h2>{city.title()}</h2>
-                    <p style="font-size:1.1rem;">{description}</p>
-                    <div class="main-temp">{temp}°C</div>
-                    <p class="info">💧 Humidity: {humidity}% &nbsp; | &nbsp; 🌬️ Wind: {wind_speed} m/s</p>
-                    <p class="info">📊 Pressure: {pressure} hPa</p>
-                </div>
-            """, unsafe_allow_html=True)
-
-    except requests.exceptions.RequestException:
-        st.error("⚠️ Network error. Please check your connection and try again.")
-else:
-    st.info("ℹ️ Please enter a city name to get weather details.")
+            st.error("❌ City not found.")
+    else:
+        st.warning("Please enter a city name.")
