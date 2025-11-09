@@ -25,7 +25,6 @@ Get real-time weather updates for any city around the world — fast, clean, and
 
 ![App Screenshot](<img width="1797" height="876" alt="image" src="https://github.com/user-attachments/assets/228188b1-2bbe-49fa-a62e-7afa0e34e51c" />
 )  
-*(Replace `screenshot.png` with an image of your app.)*
 
 ---
 
